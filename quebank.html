@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUEBANK AI - Your Study Buddy</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
+        };
+    </script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --soft-bg: #fdfcfb;
+            --buddy-color: #818cf8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #fef2f2 100%);
+            background-attachment: fixed;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.98);
+            width: 90%;
+            max-width: 450px;
+            padding: 40px;
+            border-radius: 35px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+            position: relative;
+            text-align: center;
+        }
+
+        /* The Tiny Creature (Que-Bot) */
+        #buddy-container {
+            width: 70px;
+            height: 70px;
+            background: var(--buddy-color);
+            border-radius: 20px 20px 15px 15px;
+            margin: 0 auto 20px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Solid Black Dot Eyes */
+        .eye {
+            width: 10px;
+            height: 10px;
+            background: #1e293b;
+            border-radius: 50%;
+            position: absolute;
+            top: 25px;
+            transition: transform 0.1s linear;
+        }
+        .eye-left { left: 18px; }
+        .eye-right { right: 18px; }
+
+        .mouth {
+            width: 16px;
+            height: 8px;
+            border-bottom: 3px solid #1e293b;
+            border-radius: 0 0 10px 10px;
+            position: absolute;
+            bottom: 18px;
+            transition: 0.3s;
+        }
+
+        .status-pill {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 0.65rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: #f1f5f9;
+            color: #64748b;
+            font-weight: bold;
+        }
+        .online { background: #dcfce7; color: #15803d; }
+
+        h1 { color: #1e293b; margin: 0; font-size: 1.6rem; letter-spacing: -0.5px; }
+        p.sub { color: #94a3b8; font-size: 0.85rem; margin-bottom: 25px; }
+
+        .input-group { text-align: left; margin-bottom: 18px; }
+        label { font-weight: 600; color: #475569; font-size: 0.85rem; margin-left: 4px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #f1f5f9;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            margin-top: 6px;
+            outline: none;
+            background: #f8fafc;
+            transition: 0.2s;
+        }
+        input:focus { border-color: var(--primary); background: white; }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-top: 12px;
+            transition: 0.3s;
+        }
+        .btn-start { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
+        .btn-mic { background: #fda4af; color: #9f1239; }
+
+        .box {
+            background: #f8fafc;
+            padding: 22px;
+            border-radius: 18px;
+            margin: 20px 0;
+            color: #334155;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border: 1px solid #f1f5f9;
+        }
+
+        .screen { display: none; }
+        .active { display: block; animation: slideUp 0.4s ease-out; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div id="status" class="status-pill">Waking up...</div>
+        
+        <div id="buddy-container">
+            <div id="eye-l" class="eye eye-left"></div>
+            <div id="eye-r" class="eye eye-right"></div>
+            <div id="buddy-mouth" class="mouth"></div>
+        </div>
+
+        <h1>QueBank 🐾</h1>
+        <p class="sub">Your Friendly Study Buddy</p>
+
+        <div id="setup-screen" class="screen active">
+            <div class="input-group">
+                <label>Grade Level</label>
+                <select id="userClass">
+                    <script>for (let i = 1; i <= 12; i++) document.write(`<option value="${i}">Class ${i}</option>`)</script>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Subject</label>
+                <input type="text" id="userSubject" placeholder="e.g. Science or Math">
+            </div>
+            <div class="input-group">
+                <label>Topic</label>
+                <input type="text" id="userTopic" placeholder="e.g. Solar System">
+            </div>
+            <button class="btn btn-start" onclick="initiateBuddy()">Start Learning 🚀</button>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="box" id="questionArea">Loading...</div>
+            <button id="micBtn" class="btn btn-mic" onclick="handleVoice()">🎤 Speak Answer</button>
+            <textarea id="typedAnswer" placeholder="Or type your answer here..."></textarea>
+            <button class="btn btn-start" onclick="handleTypedAnswer()">Check My Work ✨</button>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <h2 id="scoreDisplay" style="font-size: 2.2rem; color: var(--primary);">--/10</h2>
+            <div id="feedbackArea" class="box" style="text-align: left; font-size: 0.9rem;"></div>
+            <button class="btn btn-start" onclick="initiateBuddy()">Next Question 💨</button>
+            <button class="btn" style="background: #f1f5f9; color: #64748b;" onclick="location.reload()">Change Topic</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+        const API_KEY = "AIzaSyAXKN6hYjvkHlEFx3lJU31cnKwG6d60YCo";
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        let buddyModel;
+
+        // Eye Movement Logic
+        document.addEventListener('mousemove', (e) => {
+            const eyes = document.querySelectorAll('.eye');
+            eyes.forEach(eye => {
+                const rect = eye.getBoundingClientRect();
+                const eyeX = rect.left + rect.width / 2;
+                const eyeY = rect.top + rect.height / 2;
+                const angle = Math.atan2(e.clientY - eyeY, e.clientX - eyeX);
+                const distance = 4; // Max movement
+                const moveX = Math.cos(angle) * distance;
+                const moveY = Math.sin(angle) * distance;
+                eye.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+
+        function setBuddyMood(mood) {
+            const mouth = document.getElementById('buddy-mouth');
+            const buddy = document.getElementById('buddy-container');
+            if (mood === 'happy') {
+                mouth.style.borderRadius = "0 0 20px 20px";
+                mouth.style.height = "12px";
+                mouth.style.borderTop = "none";
+                mouth.style.borderBottom = "3px solid #1e293b";
+                buddy.style.transform = "scale(1.1) rotate(5deg)";
+            } else if (mood === 'sad') {
+                mouth.style.borderRadius = "20px 20px 0 0";
+                mouth.style.height = "5px";
+                mouth.style.borderBottom = "none";
+                mouth.style.borderTop = "3px solid #1e293b";
+                buddy.style.transform = "scale(0.9) rotate(-5deg)";
+            } else {
+                mouth.style.borderRadius = "0 0 10px 10px";
+                mouth.style.height = "8px";
+                mouth.style.borderTop = "none";
+                mouth.style.borderBottom = "3px solid #1e293b";
+                buddy.style.transform = "scale(1)";
+            }
+        }
+
+        async function wakeUpBuddy() {
+            try {
+                const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+                buddyModel = model;
+                document.getElementById('status').innerText = "Online";
+                document.getElementById('status').className = "status-pill online";
+            } catch (e) { document.getElementById('status').innerText = "Offline"; }
+        }
+        wakeUpBuddy();
+
+        let currentQ = "";
+        let rec;
+        let isActive = false;
+
+        window.initiateBuddy = async () => {
+            setBuddyMood('neutral');
+            const cls = document.getElementById('userClass').value;
+            const sub = document.getElementById('userSubject').value || "Knowledge";
+            const top = document.getElementById('userTopic').value || "Random";
+
+            showScreen('quiz-screen');
+            document.getElementById('questionArea').innerText = "Thinking of a question...";
+            document.getElementById('typedAnswer').value = "";
+
+            const prompt = `Grade ${cls} tutor. Subject: ${sub}. Topic: ${top}. Ask ONE specific question. No conversation. Use LaTeX.`;
+
+            try {
+                const result = await buddyModel.generateContent(prompt);
+                currentQ = result.response.text();
+                document.getElementById('questionArea').innerText = currentQ;
+                if (window.MathJax) MathJax.typesetPromise([document.getElementById('questionArea')]);
+            } catch (e) { initiateBuddy(); }
+        };
+
+        window.handleTypedAnswer = () => {
+            const ans = document.getElementById('typedAnswer').value.trim();
+            if (ans) gradeAnswer(ans);
+        };
+
+        window.handleVoice = () => {
+            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!Speech) return alert("Mic not available");
+            if (isActive) { rec.stop(); return; }
+
+            rec = new Speech();
+            rec.onstart = () => { 
+                isActive = true; 
+                document.getElementById('micBtn').innerText = "🛑 Stop & Submit";
+            };
+            rec.onresult = (e) => {
+                let transcript = e.results[0][0].transcript;
+                gradeAnswer(transcript);
+            };
+            rec.onend = () => { 
+                isActive = false; 
+                document.getElementById('micBtn').innerText = "🎤 Speak Answer";
+            };
+            rec.start();
+        };
+
+        async function gradeAnswer(ans) {
+            document.getElementById('questionArea').innerText = "Buddy is grading...";
+            const prompt = `Grade this answer for Class ${document.getElementById('userClass').value}. 
+            Question: ${currentQ}. Student said: "${ans}".
+            IMPORTANT: Ignore grammar, capitalization, and full stops. Only grade content.
+            Format: Score: [X]/10. List "Correct" and "Missing" points.`;
+
+            try {
+                const result = await buddyModel.generateContent(prompt);
+                const feedback = result.response.text();
+                const scoreMatch = feedback.match(/(\d+)\/10/);
+                const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+
+                document.getElementById('scoreDisplay').innerText = score + "/10";
+                document.getElementById('feedbackArea').innerText = feedback;
+                
+                setBuddyMood(score >= 7 ? 'happy' : 'sad');
+                if (window.MathJax) MathJax.typesetPromise([document.getElementById('feedbackArea')]);
+                showScreen('result-screen');
+            } catch (e) { alert("Error checking answer!"); }
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
+</body>
+</html>
